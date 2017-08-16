@@ -1,0 +1,146 @@
+{% load static %}
+{% load filter %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if 'user' in request.session %}
+            {{ request.session.user|getUserName }}
+        {% else %}
+            New Beginnings - View Item
+        {% endif %}
+    </title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <div id="nav">
+        <form action="/" method="GET" id="frmSearch">
+            <p style="text-transform: uppercase;"><a href="/">New Beginnings</a></p>
+            {{ form.as_p }}
+            <input type="submit" value="Search" id="search">
+
+            <ul>
+                <li>
+                    Account
+                    <ul>
+                        {% if request.session|getUser == None %}
+                            <li><a href="/login/">Log In</a></li>
+                            <li><a href="/register/">Register</a></li>
+                        {% else %}
+                            <li><a href="/profile/">Profile</a></li>
+                            <li><a href="/messages/">Messages</a></li>
+                            <li><a href="/post/">Post An Item</a></li>
+                            <li><a href="/logout/">Log Out</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+            </ul>
+        </form>
+    </div>
+
+    <div id="itemDetails">
+        <div class="post viewItemPost">
+            <a href="{{ post.post_pic.url }}"> <img src="{{ post.post_pic.url }}" alt="{{ post.post_name }}"></a>
+            <div class="postDetails">
+                <p><b>Name: </b> {{ post.post_name }}</p>
+                <p><b>Description: </b> {{ post.post_description }}</p>
+                <p><b>Owner: </b> <a href="/profile/?user={{ post.post_owner.id }}">{{ post.post_owner.user_name }}</a></p>
+                <p><b>Type: </b> <span onclick="searchType('{{ post.post_type }}')">{% if post.post_type == 'academic' %} Academic {% else %} Office {% endif %}</span></p>
+                {% if post.post_type == 'academic' %}
+                    <p><b>Course: </b> {{ post.post_course }}</p>
+                {% endif %}
+                <p><b>Tags: </b>
+                    {% for tag in post.post_tags.names %}
+                        <span class="tag" onclick="searchTag(this)">{{ tag }}</span>
+                    {% endfor %}
+                </p>
+            </div>
+        </div>
+
+        {% if offer and post.post_owner_id != request.session|getUser %}
+            <div id="form">
+                <form action="/viewItem/?item={{ item }}" method="POST" style="display: inline-block;">
+                    <input type="hidden" name="itemOffer">
+                    {% csrf_token %}
+                    <input type="submit" value="Offer An Item" id="btn">
+                </form>
+
+                <form action="/viewItem/?item={{ item }}" method="POST" style="display: inline-block;">
+                    <input type="hidden" name="moneyOffer">
+                    {% csrf_token %}
+                    <input type="submit" value="Offer Money" id="btn">
+                </form>
+                <br><br>
+                <form action="/offer/" method="POST">
+                    <h1>Offer</h1>
+                    <hr>
+                    {% csrf_token %}
+                    {{ offer.as_p }}
+                    <input type="hidden" name="post" value="{{ item }}">
+
+                    <input type="hidden" name="type" value="{{  offer|getType }}">
+                    <div class="center">
+                        <input type="submit" value="Offer" id="btn" style="padding: 10px; width: 150px;">
+                    </div>
+                    {% if error %}
+                        <div style="background-color: #b85e50; padding: 7px; margin-top: 10px; border-radius: 3px;"><b>Error:</b> {{ error }}</div>
+                    {% endif %}
+                </form>
+                <form action="/cancel/" method="POST" style="text-align: center; margin-top: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="post" value="{{ item }}">
+                    <input type="submit" value="Cancel Offer" id="btn" style="padding: 10px; background-color: #b85e50;">
+                </form>
+            </div>
+        {% elif post.post_owner_id != request.session|getUser %}
+            <div>
+                <h1>Actions:</h1>
+                <form action="/viewItem/?item={{ item }}" method="POST" style="display: inline-block;">
+                    <input type="hidden" name="itemOffer">
+                    {% csrf_token %}
+                    <input type="submit" value="Offer An Item" id="btn">
+                </form>
+
+                <form action="/viewItem/?item={{ item }}" method="POST" style="display: inline-block;">
+                    <input type="hidden" name="moneyOffer">
+                    {% csrf_token %}
+                    <input type="submit" value="Offer Money" id="btn">
+                </form>
+            </div>
+        {% else %}
+            <div>
+                <h1>OFFERS</h1>
+                <hr>
+
+                <div style="text-align: center;">
+                    <a href="/viewItem/?item={{ item }}&view=items" id="btn" style="margin: 15px; display: inline-block; width: 200px; text-align: center;">View All Item Offers</a>
+                    <a href="/viewItem/?item={{ item }}&view=money" id="btn" style="background-color: #b85e50; margin: 15px; display: inline-block; width: 200px; text-align: center;">View All Money Offers</a>
+                </div>
+
+                {% if displayItem %}
+                    <hr>
+                    {% for d in displayItem %}
+                        <p style="margin: 10px; padding: 5px; border-bottom: 2px solid #c1c1c1;">
+                            <b><a href="/profile/?user={{ d.itemO_offer.offer_user.id }}">{{ d.itemO_offer.offer_user.user_name }}</a></b>
+                            offered: <a href="/viewItem/?item={{ d.item.id }}">{{ d.item.post_name }}</a><br>
+                        <a href="/viewItem/accept/?offer={{ d.id }}&type=0">Accept Offer</a>
+                            <a href="/viewItem/reject/?offer={{ d.id }}&type=0">Reject Offer</a>
+                        </p>
+                    {% endfor %}
+                {% elif displayMoney %}
+                    <hr>
+                    {% for m in displayMoney %}
+                        <p style="margin: 10px; padding: 5px; border-bottom: 2px solid #c1c1c1;">
+                            <b><a href="/profile/?user={{ m.moneyO_offer.offer_user.id }}">{{ m.moneyO_offer.offer_user.user_name }}</a></b> offered: Php. {{ m.money }}
+                            <br><a href="/viewItem/accept/?offer={{ m.id }}&type=1">Accept Offer</a>
+                            <a href="/viewItem/reject/?offer={{ m.id }}&type=1">Reject Offer</a>
+                        </p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

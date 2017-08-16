@@ -1,0 +1,56 @@
+{% load static %}
+{% load filter %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if 'user' in request.session %}
+            {{ request.session.user|getUserName }}
+        {% else %}
+            New Beginnings - View Posts
+        {% endif %}
+    </title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <div id="nav">
+        <form action="/" method="GET" id="frmSearch">
+            <p style="text-transform: uppercase;"><a href="/">New Beginnings</a></p>
+            {{ form.as_p }}
+            <input type="submit" value="Search" id="search">
+
+            <ul>
+                <li>
+                    Account
+                    <ul>
+                        {% if request.session|getUser == None %}
+                            <li><a href="/login/">Log In</a></li>
+                            <li><a href="/register/">Register</a></li>
+                        {% else %}
+                            <li><a href="/profile/">Profile</a></li>
+                            <li><a href="/messages/">Messages</a></li>
+                            <li><a href="/post/">Post An Item</a></li>
+                            <li><a href="/logout/">Log Out</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+            </ul>
+        </form>
+    </div>
+
+    <div id="messages">
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding: 10px; display: block; border-bottom: 1px solid #e2e2e2">
+                    <b>{{ message.mFrom.user_name }}</b>: {{ message.message|safe }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <h1 style="text-align: center; display: block;">No New Messages</h1>
+        {% endif %}
+    </div>
+</body>
+<script src="{% static 'jquery-3.2.1.min.js' %}"></script>
+
+</html>

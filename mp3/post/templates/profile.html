@@ -1,0 +1,102 @@
+{% load static %}
+{% load filter %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if 'user' in request.session %}
+            {{ request.session.user|getUserName }}
+        {% else %}
+            New Beginnings - View Profile
+        {% endif %}
+    </title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <div id="nav">
+        <form action="/profile/" method="GET" id="frmSearch">
+            <p style="text-transform: uppercase;"><a href="/">New Beginnings</a></p>
+            {{ form.as_p }}
+            <input type="submit" value="Search" id="search">
+
+            <ul>
+                <li>
+                    Account
+                    <ul>
+                        {% if request.session|getUser == None %}
+                            <li><a href="/login/">Log In</a></li>
+                            <li><a href="/register/">Register</a></li>
+                        {% else %}
+                            <li><a href="/profile/">Profile</a></li>
+                            <li><a href="/messages/">Messages</a></li>
+                            <li><a href="/post/">Post An Item</a></li>
+                            <li><a href="/logout/">Log Out</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+            </ul>
+        </form>
+    </div>
+
+    <div id="user">
+        <div id="info">
+            <div id="img"><img src="{{ account.user_pic.url }}" alt=""></div>
+            <div id="details">
+                <div id="name"><h1>{{ account.user_name }}</h1></div>
+                <div id="email"><b>Email:</b> {{ account.user_email }}</div>
+                <div id="type"><b>Type:</b> {% if account.user_type == 'student' %} Student {% else %} Professor {% endif %}</div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div id="posts">
+        {% if pages != 0 or pages != '0' %}
+            <div style="margin-top: 25px; text-align: center;" id="postControls">
+                {% if page > 1 %}
+                    <a href="#" id="prevPage" data-page="{{ page|add:-1 }}">Previous</a>
+                {% endif %}
+                    Page {{ page }} of {{ pages }}
+                {% if page < pages %}
+                    <a href="#" id="nextPage" data-page="{{ page|add:1 }}">Next</a>
+                {% endif %}
+            </div>
+
+            {% for d in data %}
+                <div class="post">
+                    <a href="{{ d.post_pic.url }}"> <img src="{{ d.post_pic.url }}" alt="{{ d.post_name }}"></a>
+                    <div class="postDetails">
+                        <p><b>Name: </b> {{ d.post_name }}</p>
+                        <p><b>Description: </b> {{ d.post_description }}</p>
+                        <p><b>Owner: </b> <a href="/profile/?user={{ d.post_owner.id }}">{{ d.post_owner.user_name }}</a></p>
+                        <p><b>Type: </b> <span onclick="searchType('{{ d.post_type }}')">{% if d.post_type == 'academic' %} Academic {% else %} Office {% endif %}</span></p>
+                        {% if d.post_type == 'academic' %}
+                            <p><b>Course: </b> {{ d.post_course }}</p>
+                        {% endif %}
+                        <p><b>Tags: </b>
+                            {% for tag in d.post_tags.names %}
+                                <span class="tag" onclick="searchTag(this)">{{ tag }}</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-transform: uppercase; text-align: center; margin-top: 25px;"><h1>There are no posts!</h1></div>
+        {% endif %}
+    </div>
+</body>
+<script src="{% static 'jquery-3.2.1.min.js' %}"></script>
+<script>
+    function searchTag(obj){
+        $("#id_post_tags").val(obj.innerHTML);
+        $("#frmSearch").submit()
+    }
+
+    function searchType(type){
+        $("#id_post_type").value = type;
+        $("#frmSearch").submit()
+    }
+</script>
+</html>
